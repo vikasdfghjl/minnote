@@ -54,6 +54,7 @@ A minimal, elegant note-taking desktop application built with [Tauri 2.0](https:
 - User-friendly error messages
 
 ### Resource Monitoring
+
 - Real-time performance metrics
 - Cache hit/miss tracking
 - Operation statistics

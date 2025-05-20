@@ -8,9 +8,10 @@ interface Tab {
   filePath?: string;
   lastModified: number;
   isDirty: boolean;
+  type?: 'note' | 'settings';  // Add type to distinguish between note and settings tabs
 }
 
-const mainContent = document.getElementById("main-content") as HTMLDivElement;
+// const mainContent = document.getElementById("main-content") as HTMLDivElement;
 const noteArea = document.getElementById("note-area") as HTMLTextAreaElement;
 const settingsView = document.getElementById("settings-view") as HTMLDivElement;
 const statusMsg = document.getElementById("status-msg") as HTMLElement;
@@ -27,7 +28,7 @@ const settingsBtn = document.getElementById("settings-btn") as HTMLButtonElement
 const backToNotesBtn = document.getElementById("back-to-notes-btn") as HTMLButtonElement;
 
 // Settings and Modal Optimization
-const MODAL_ANIMATION_DURATION = 200; // ms
+// const MODAL_ANIMATION_DURATION = 200; // ms
 
 // Cache DOM queries
 const settingsElements = {
@@ -53,35 +54,9 @@ let autoSaveTimer: number | undefined;
 const AUTO_SAVE_DELAY = 1000; // ms
 
 // Performance optimizations
-const DEBOUNCE_DELAY = 150;
-const THROTTLE_DELAY = 100;
-
-// Debounce function for frequent events
-function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-}
-
-// Throttle function for performance-heavy operations
-function throttle<T extends (...args: any[]) => any>(
-  func: T,
-  limit: number
-): (...args: Parameters<T>) => void {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  };
-}
+// const DEBOUNCE_DELAY = 150;
+// const THROTTLE_DELAY = 100;
+// const TEXT_UPDATE_THROTTLE = 100; // ms
 
 // Optimize tab switching with content caching
 const tabContentCache = new Map<string, string>();
@@ -137,7 +112,10 @@ function handleError(error: Error, context: string) {
   if (context === 'save_note') {
     retryOperation(() => saveNote(noteArea.value, activeTabId!, true), 3);
   } else if (context === 'load_note') {
-    retryOperation(() => loadNote(activeTab?.filePath), 3);
+    const activeTab = activeTabId ? tabsMap.get(activeTabId) : undefined;
+    retryOperation(async () => {
+      await loadNote(activeTab?.filePath);
+    }, 3);
   }
 }
 
@@ -158,16 +136,17 @@ async function retryOperation(operation: () => Promise<void>, maxRetries: number
   }
 }
 
-function createNewTab(): Tab {
+function createNewTab(type: 'note' | 'settings' = 'note'): Tab {
   const tabId = `tab-${Date.now()}`;
   const tab: Tab = {
     id: tabId,
-    title: "Untitled",
+    title: type === 'settings' ? "Settings" : "Untitled",
     content: "",
     isDirty: false,
     isSaved: true,
-    filePath: null,
-    lastModified: Date.now()
+    filePath: undefined,
+    lastModified: Date.now(),
+    type: type
   };
   
   tabsMap.set(tabId, tab);
@@ -192,15 +171,25 @@ function switchToTab(tabId: string) {
   // Switch to new tab
   activeTabId = tabId;
   
-  // Check cache first
-  const cachedContent = tabContentCache.get(tabId);
-  if (cachedContent && Date.now() - tab.lastModified < CACHE_EXPIRY) {
-    noteArea.value = cachedContent;
-    performanceMetrics.cacheHits++;
+  // Handle different tab types
+  if (tab.type === 'settings') {
+    noteArea.style.display = "none";
+    settingsView.style.display = "block";
+    loadSettingsToView();
   } else {
-    noteArea.value = tab.content;
-    tabContentCache.set(tabId, tab.content);
-    performanceMetrics.cacheMisses++;
+    noteArea.style.display = "block";
+    settingsView.style.display = "none";
+    
+    // Check cache first
+    const cachedContent = tabContentCache.get(tabId);
+    if (cachedContent && Date.now() - tab.lastModified < CACHE_EXPIRY) {
+      noteArea.value = cachedContent;
+      performanceMetrics.cacheHits++;
+    } else {
+      noteArea.value = tab.content;
+      tabContentCache.set(tabId, tab.content);
+      performanceMetrics.cacheMisses++;
+    }
   }
   
   updateCharCount();
@@ -250,23 +239,6 @@ function updateTabUI() {
     switchToTab(newTab.id);
   });
   tabBar.appendChild(newTabBtn);
-}
-
-// Event delegation for tab clicks
-function handleTabClick(e: MouseEvent) {
-  const target = e.target as HTMLElement;
-  const tabElement = target.closest('.tab');
-  if (!tabElement) return;
-  
-  const tabId = tabElement.getAttribute('data-tab-id');
-  if (!tabId) return;
-  
-  if (target.classList.contains('tab-close')) {
-    e.stopPropagation();
-    closeTab(tabId);
-  } else {
-    switchToTab(tabId);
-  }
 }
 
 // Optimize tab closing
@@ -341,54 +313,44 @@ async function showSaveDialog(tab: Tab): Promise<'save' | 'dont-save' | 'cancel'
 }
 
 // Text area optimization
-const TEXT_UPDATE_THROTTLE = 100; // ms
+// const TEXT_UPDATE_THROTTLE = 100; // ms
 
 // Optimize text area input handling
 if (noteArea) {
   let lastContent = '';
   let isUpdating = false;
 
-  // Use a more efficient input handler
-  noteArea.addEventListener('input', debounce((e: Event) => {
+  noteArea.addEventListener('input', debounce(() => {
     if (!activeTabId || isUpdating) return;
-    
     const activeTab = tabsMap.get(activeTabId);
     if (!activeTab) return;
-
     const newContent = noteArea.value;
     if (newContent === lastContent) return;
-
     isUpdating = true;
     activeTab.isDirty = true;
     activeTab.content = newContent;
     lastContent = newContent;
-    
-    // Update UI
     requestAnimationFrame(() => {
       updateTabUI();
       updateCharCount();
       setStatus("Editing...");
       isUpdating = false;
     });
-
-    // Handle auto-save
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = window.setTimeout(() => {
       if (activeTabId) {
         saveNote(noteArea.value, activeTabId, false);
       }
     }, AUTO_SAVE_DELAY);
-  }, TEXT_UPDATE_THROTTLE));
+  }, 100));
 
-  // Optimize scrolling with passive listener
-  noteArea.addEventListener('scroll', throttle((e: Event) => {
+  noteArea.addEventListener('scroll', throttle(() => {
     // Handle scroll events if needed
-  }, TEXT_UPDATE_THROTTLE), { passive: true });
+  }, 100), { passive: true });
 
-  // Optimize selection changes
-  noteArea.addEventListener('select', throttle((e: Event) => {
+  noteArea.addEventListener('select', throttle(() => {
     // Handle selection changes if needed
-  }, TEXT_UPDATE_THROTTLE), { passive: true });
+  }, 100), { passive: true });
 }
 
 // Optimize character count updates
@@ -546,45 +508,6 @@ async function loadNote(filePath?: string) {
 
 // --- Settings Modal Logic ---
 
-function openSettings() {
-  // Save current tab content if exists
-  if (activeTabId) {
-    const currentTab = tabsMap.get(activeTabId);
-    if (currentTab) {
-      currentTab.content = noteArea.value;
-      currentTab.lastModified = Date.now();
-    }
-  }
-
-  // Load settings
-  loadSettingsToView();
-  
-  // Show settings view
-  noteArea.style.display = "none";
-  settingsView.style.display = "block";
-  
-  // Update status
-  setStatus("Settings");
-}
-
-function closeSettings() {
-  // Hide settings view
-  settingsView.style.display = "none";
-  noteArea.style.display = "block";
-  
-  // Restore tab content
-  if (activeTabId) {
-    const tab = tabsMap.get(activeTabId);
-    if (tab) {
-      noteArea.value = tab.content;
-      updateCharCount();
-    }
-  }
-  
-  // Update status
-  setStatus("Ready");
-}
-
 // Update settings loading function
 async function loadSettingsToView() {
   // Load font settings from cache
@@ -700,37 +623,28 @@ if (tabBar) {
 const modal = document.querySelector('.modal');
 if (modal) {
   // Use requestAnimationFrame for smooth animations
-  function showModal() {
-    requestAnimationFrame(() => {
-      modal.classList.add('active');
-    });
-  }
-
-  function hideModal() {
-    requestAnimationFrame(() => {
-      modal.classList.remove('active');
-    });
-  }
+  // function showModal() { ... }
+  // function hideModal() { ... }
 }
 
 // Memory management
-let activeTimeouts: NodeJS.Timeout[] = [];
-let activeIntervals: NodeJS.Timer[] = [];
+let activeTimeouts: ReturnType<typeof setTimeout>[] = [];
+let activeIntervals: ReturnType<typeof setInterval>[] = [];
 
-function createTimeout(callback: () => void, delay: number) {
-  const timeout = setTimeout(() => {
-    callback();
-    activeTimeouts = activeTimeouts.filter(t => t !== timeout);
-  }, delay);
-  activeTimeouts.push(timeout);
-  return timeout;
-}
+// function createTimeout(callback: () => void, delay: number) {
+//   const timeout = setTimeout(() => {
+//     callback();
+//     activeTimeouts = activeTimeouts.filter(t => t !== timeout);
+//   }, delay);
+//   activeTimeouts.push(timeout);
+//   return timeout;
+// }
 
-function createInterval(callback: () => void, delay: number) {
-  const interval = setInterval(callback, delay);
-  activeIntervals.push(interval);
-  return interval;
-}
+// function createInterval(callback: () => void, delay: number) {
+//   const interval = setInterval(callback, delay);
+//   activeIntervals.push(interval);
+//   return interval;
+// }
 
 // Cleanup all timeouts and intervals
 function cleanupTimers() {
@@ -827,11 +741,39 @@ newTabBtn?.addEventListener("click", () => {
 });
 
 // Add event listener for settings button
-settingsBtn?.addEventListener("click", openSettings);
-backToNotesBtn?.addEventListener("click", closeSettings);
+settingsBtn?.addEventListener("click", () => {
+  // Check if settings tab already exists
+  const existingSettingsTab = Array.from(tabsMap.values()).find(tab => tab.type === 'settings');
+  
+  if (existingSettingsTab) {
+    // Switch to existing settings tab
+    switchToTab(existingSettingsTab.id);
+  } else {
+    // Create new settings tab
+    const settingsTab = createNewTab('settings');
+    switchToTab(settingsTab.id);
+  }
+});
+
+// Update back to notes button to close settings tab
+backToNotesBtn?.addEventListener("click", () => {
+  if (activeTabId) {
+    const activeTab = tabsMap.get(activeTabId);
+    if (activeTab?.type === 'settings') {
+      closeTab(activeTabId);
+    }
+  }
+});
+
+// Update apply settings button to close settings tab after applying
 settingsElements.applyBtn?.addEventListener("click", () => {
   applySettings();
-  closeSettings();
+  if (activeTabId) {
+    const activeTab = tabsMap.get(activeTabId);
+    if (activeTab?.type === 'settings') {
+      closeTab(activeTabId);
+    }
+  }
 });
 
 // Update directory operation handlers
@@ -882,4 +824,31 @@ function loadSettings() {
     .catch(e => {
       console.error("Error loading notes directory:", e);
     });
+}
+
+// Debounce function for frequent events
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: ReturnType<typeof setTimeout>;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
+// Throttle function for performance-heavy operations
+function throttle<T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
 }
