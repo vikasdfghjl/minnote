@@ -134,7 +134,7 @@ function handleError(error: Error, context: string) {
   
   // Implement retry logic for specific operations
   if (context === 'save_note') {
-    retryOperation(() => saveNote(noteArea.value, activeTabId!), 3);
+    retryOperation(() => saveNote(noteArea.value, activeTabId!, true), 3);
   } else if (context === 'load_note') {
     retryOperation(() => loadNote(activeTab?.filePath), 3);
   }
@@ -277,7 +277,7 @@ async function closeTab(tabId: string) {
     const response = await showSaveDialog(tab);
     if (response === 'cancel') return;
     if (response === 'save') {
-      await saveNote(tab.content, tabId);
+      await saveNote(tab.content, tabId, true);
     }
   }
 
@@ -374,7 +374,7 @@ if (noteArea) {
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = window.setTimeout(() => {
       if (activeTabId) {
-        saveNote(noteArea.value, activeTabId);
+        saveNote(noteArea.value, activeTabId, false);
       }
     }, AUTO_SAVE_DELAY);
   }, TEXT_UPDATE_THROTTLE));
@@ -434,7 +434,7 @@ function updateStatus() {
 }
 
 // Optimize content saving
-async function saveNote(content: string, tabId: string) {
+async function saveNote(content: string, tabId: string, forcePrompt: boolean = false) {
   try {
     const tab = tabsMap.get(tabId);
     if (!tab) return;
@@ -447,7 +447,8 @@ async function saveNote(content: string, tabId: string) {
 
     let filePath = tab.filePath;
     
-    if (!filePath) {
+    // Only prompt for filename if explicitly saving (Save/Save As) or if forcePrompt is true
+    if (!filePath && forcePrompt) {
       const fileName = prompt("Enter file name:", tab.title);
       if (!fileName) return;
       
@@ -456,6 +457,12 @@ async function saveNote(content: string, tabId: string) {
       tab.filePath = filePath;
       tab.title = fileName.replace('.txt', '');
       updateTabUI();
+    }
+
+    // If no filePath and not forcing prompt, just update the tab state
+    if (!filePath) {
+      tab.isDirty = true;
+      return;
     }
 
     // Use requestIdleCallback for non-critical operations
@@ -767,7 +774,7 @@ window.addEventListener('unload', cleanupTimers);
 
 saveBtn?.addEventListener("click", () => {
   if (!activeTabId) return;
-  saveNote(noteArea.value, activeTabId);
+  saveNote(noteArea.value, activeTabId, true);
 });
 
 saveAsBtn?.addEventListener("click", () => {
@@ -776,7 +783,7 @@ saveAsBtn?.addEventListener("click", () => {
   if (activeTab) {
     // Clear the file path to force a new save dialog
     activeTab.filePath = undefined;
-    saveNote(noteArea.value, activeTabId);
+    saveNote(noteArea.value, activeTabId, true);
   }
 });
 
