@@ -669,6 +669,27 @@ button {
   color: var(--text-color);
 }
 
+.notes-directory-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.change-folder-btn {
+  background-color: var(--secondary-bg-color);
+  color: var(--text-color);
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.change-folder-btn:hover {
+  background-color: var(--menu-hover);
+}
+
 .open-folder-btn {
   background-color: var(--accent-color);
   color: white;
@@ -683,4 +704,11 @@ button {
 
 .open-folder-btn:hover {
   background-color: var(--accent-hover);
+}
+
+.notes-directory-help {
+  margin-top: 8px;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-size: 12px;
 }

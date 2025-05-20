@@ -28,6 +28,7 @@ const fontFamilySelect = document.getElementById("font-family-select") as HTMLSe
 const fontSizeInput = document.getElementById("font-size-input") as HTMLInputElement;
 const notesDirectoryPath = document.getElementById("notes-directory-path") as HTMLSpanElement;
 const openNotesDirectoryBtn = document.getElementById("open-notes-directory") as HTMLButtonElement;
+const changeNotesDirectoryBtn = document.getElementById("change-notes-directory") as HTMLButtonElement;
 
 let tabs: Tab[] = [];
 let activeTabId: string | null = null;
@@ -307,6 +308,21 @@ openNotesDirectoryBtn?.addEventListener("click", async () => {
     await invoke("open_notes_directory");
   } catch (e) {
     setStatus("Error opening notes directory");
+  }
+});
+
+changeNotesDirectoryBtn?.addEventListener("click", async () => {
+  try {
+    const newPath = await invoke<string>("select_notes_directory");
+    if (notesDirectoryPath) {
+      notesDirectoryPath.textContent = newPath;
+      setStatus("Notes directory changed");
+      setTimeout(() => setStatus("Ready"), 2000);
+    }
+  } catch (e) {
+    if (e !== "No directory selected") {
+      setStatus("Error changing notes directory");
+    }
   }
 });
 
