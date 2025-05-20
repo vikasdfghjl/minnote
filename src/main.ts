@@ -26,6 +26,8 @@ const closeSettingsModalBtn = document.getElementById("close-settings-modal") as
 const applySettingsBtn = document.getElementById("apply-settings-btn") as HTMLButtonElement;
 const fontFamilySelect = document.getElementById("font-family-select") as HTMLSelectElement;
 const fontSizeInput = document.getElementById("font-size-input") as HTMLInputElement;
+const notesDirectoryPath = document.getElementById("notes-directory-path") as HTMLSpanElement;
+const openNotesDirectoryBtn = document.getElementById("open-notes-directory") as HTMLButtonElement;
 
 let tabs: Tab[] = [];
 let activeTabId: string | null = null;
@@ -92,13 +94,19 @@ function updateTabUI() {
   });
 }
 
-function closeTab(tabId: string) {
+async function closeTab(tabId: string) {
   const tabIndex = tabs.findIndex(t => t.id === tabId);
   if (tabIndex === -1) return;
 
   const tab = tabs[tabIndex];
-  if (!tab.isSaved && !confirm("Close tab? Unsaved changes will be lost.")) {
-    return;
+  if (!tab.isSaved) {
+    const response = await showSaveDialog(tab);
+    if (response === 'cancel') {
+      return;
+    }
+    if (response === 'save') {
+      await saveNote(tab.content, tab.id);
+    }
   }
 
   tabs.splice(tabIndex, 1);
@@ -114,6 +122,45 @@ function closeTab(tabId: string) {
   }
   
   updateTabUI();
+}
+
+async function showSaveDialog(tab: Tab): Promise<'save' | 'dont-save' | 'cancel'> {
+  const dialog = document.createElement('div');
+  dialog.className = 'save-dialog';
+  dialog.innerHTML = `
+    <div class="save-dialog-content">
+      <h3>Save Changes?</h3>
+      <p>Do you want to save changes to "${tab.title}"?</p>
+      <div class="save-dialog-buttons">
+        <button class="save-btn">Save</button>
+        <button class="dont-save-btn">Don't Save</button>
+        <button class="cancel-btn">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(dialog);
+
+  return new Promise((resolve) => {
+    const saveBtn = dialog.querySelector('.save-btn');
+    const dontSaveBtn = dialog.querySelector('.dont-save-btn');
+    const cancelBtn = dialog.querySelector('.cancel-btn');
+
+    saveBtn?.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+      resolve('save');
+    });
+
+    dontSaveBtn?.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+      resolve('dont-save');
+    });
+
+    cancelBtn?.addEventListener('click', () => {
+      document.body.removeChild(dialog);
+      resolve('cancel');
+    });
+  });
 }
 
 function setStatus(msg: string) {
@@ -152,6 +199,7 @@ async function saveNote(content: string, tabId: string) {
     setStatus("Saved");
     setTimeout(() => setStatus("Ready"), 2000);
   } catch (e) {
+    console.error("Error saving note:", e);
     setStatus("Error saving note");
   }
 }
@@ -226,17 +274,27 @@ function loadSettings() {
   // This is primarily handled by loadSettingsToModal when the modal opens.
 }
 
-function loadSettingsToModal() {
+async function loadSettingsToModal() {
   const savedFontFamily = localStorage.getItem("minnote-fontFamily");
   const savedFontSize = localStorage.getItem("minnote-fontSize");
 
   if (fontFamilySelect) {
-    // Use saved value, or current style of noteArea, or default to 'var(--font-main)'
     fontFamilySelect.value = savedFontFamily || (noteArea ? getComputedStyle(noteArea).fontFamily : 'var(--font-main)');
   }
   if (fontSizeInput) {
-    // Use saved value, or current style of noteArea, or default to '16'
     fontSizeInput.value = savedFontSize || (noteArea ? parseInt(getComputedStyle(noteArea).fontSize).toString() : '16');
+  }
+
+  // Load notes directory path
+  try {
+    const path = await invoke<string>("get_notes_directory");
+    if (notesDirectoryPath) {
+      notesDirectoryPath.textContent = path;
+    }
+  } catch (e) {
+    if (notesDirectoryPath) {
+      notesDirectoryPath.textContent = "Error loading directory path";
+    }
   }
 }
 
@@ -244,6 +302,13 @@ function loadSettingsToModal() {
 settingsBtn?.addEventListener("click", openSettingsModal);
 closeSettingsModalBtn?.addEventListener("click", closeSettingsModal);
 applySettingsBtn?.addEventListener("click", applyAndCloseSettings);
+openNotesDirectoryBtn?.addEventListener("click", async () => {
+  try {
+    await invoke("open_notes_directory");
+  } catch (e) {
+    setStatus("Error opening notes directory");
+  }
+});
 
 // Close modal if user clicks outside of it
 window.addEventListener("click", (event) => {

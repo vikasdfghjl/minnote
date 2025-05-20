@@ -569,3 +569,118 @@ button {
 .tab.active {
   animation: tabSwitch 0.2s ease-out;
 }
+
+.save-dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.save-dialog-content {
+  background-color: var(--bg-color);
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  min-width: 300px;
+}
+
+.save-dialog-content h3 {
+  margin: 0 0 10px 0;
+  color: var(--text-color);
+}
+
+.save-dialog-content p {
+  margin: 0 0 20px 0;
+  color: var(--text-color);
+}
+
+.save-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.save-dialog-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.save-btn {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.dont-save-btn {
+  background-color: var(--secondary-bg-color);
+  color: var(--text-color);
+}
+
+.dont-save-btn:hover {
+  background-color: var(--menu-hover);
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+.cancel-btn:hover {
+  background-color: var(--menu-hover);
+}
+
+.notes-directory-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--divider-color);
+}
+
+.notes-directory-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--input-bg-color);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+#notes-directory-path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-color);
+}
+
+.open-folder-btn {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.open-folder-btn:hover {
+  background-color: var(--accent-hover);
+}
