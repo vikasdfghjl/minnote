@@ -19,6 +19,45 @@ A minimal, elegant note-taking desktop application built with [Tauri 2.0](https:
 - **Lightweight**: Incredibly fast startup and minimal memory footprint (~10MB RAM usage)
 - **Character Count**: Real-time character counting for your notes
 - **Status Updates**: Informative status bar with operation feedback
+- **Performance Optimized**: Advanced caching and memory management
+- **Error Recovery**: Automatic retry mechanism for failed operations
+- **Resource Efficient**: Optimized for low CPU and memory usage
+
+## Performance Features
+
+### Memory Management
+
+- Intelligent caching system for file contents
+- Automatic cleanup of unused resources
+- Memory usage monitoring and optimization
+- Size limits to prevent memory overflow
+
+### File System Optimization
+
+- File content caching with 5-minute expiry
+- Efficient file operations with retry mechanism
+- Smart auto-save with debouncing
+- File size limits for optimal performance
+
+### UI Performance
+
+- GPU-accelerated animations
+- Efficient DOM updates using DocumentFragment
+- Event delegation for better event handling
+- Optimized rendering with requestAnimationFrame
+
+### Error Handling
+
+- Automatic retry for failed operations
+- Graceful error recovery
+- Comprehensive error tracking
+- User-friendly error messages
+
+### Resource Monitoring
+- Real-time performance metrics
+- Cache hit/miss tracking
+- Operation statistics
+- Memory usage monitoring
 
 ## Screenshots
 
@@ -111,23 +150,50 @@ The compiled binaries will be available in:
 
 ## Technical Details
 
+### Performance Optimizations
+
+The app implements several performance optimizations:
+
+1. **Caching System**:
+   - File content caching with 5-minute expiry
+   - Tab content caching for instant switching
+   - Automatic cache cleanup
+   - Size limits to prevent memory issues
+
+2. **Memory Management**:
+   - Maximum cache size of 50 entries
+   - File size limit of 1MB
+   - Automatic cleanup of unused resources
+   - Memory usage monitoring
+
+3. **Error Recovery**:
+   - Automatic retry for failed operations
+   - Maximum 3 retry attempts
+   - Exponential backoff between retries
+   - Comprehensive error tracking
+
+4. **UI Performance**:
+   - GPU-accelerated animations
+   - Efficient DOM updates
+   - Event delegation
+   - Optimized rendering
+
 ### How Auto-Save Works
 
-The app implements a debounced auto-save feature that waits for 1 second of inactivity before saving your note. This ensures efficient file system access without sacrificing data safety. A status indicator at the bottom of the app shows the current state:
-
-- **Editing...**: Changes detected, not yet saved
-- **Saved**: Note successfully saved to disk
-- **Ready**: App is idle and ready for input
+The app implements an optimized auto-save feature:
+- Debounced input handling (150ms)
+- Content comparison to prevent unnecessary saves
+- Efficient file system operations
+- Automatic retry on failure
+- Status indicators for save operations
 
 ### Storage Implementation
 
-Notes are stored in your system's standard app data directory:
-
-- Windows: `%APPDATA%\minnote\note.txt`
-- macOS: `~/Library/Application Support/minnote/note.txt`
-- Linux: `~/.local/share/minnote/note.txt`
-
-The cross-platform `dirs` crate in Rust ensures that your notes are always saved in the appropriate location for your operating system.
+Notes are stored in your system's standard app data directory with optimizations:
+- File content caching
+- Efficient file operations
+- Automatic cleanup
+- Size limits and validation
 
 ## Development
 
@@ -149,6 +215,9 @@ This project demonstrates how to build a modern desktop app with web technologie
 - **Keyboard Navigation**: Enhanced keyboard shortcuts
 - **Export Formats**: PDF, HTML, and plain text exports
 - **Text Statistics**: Word count and reading time estimates
+- **Performance Analytics**: Detailed performance metrics dashboard
+- **Advanced Caching**: Configurable cache settings
+- **Batch Operations**: Efficient handling of multiple files
 
 ## Development Tools
 

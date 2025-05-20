@@ -42,6 +42,11 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  /* Performance optimizations */
+  --transition-fast: 150ms ease;
+  --transition-slow: 250ms ease;
+  --backdrop-blur: 10px; /* Reduced blur for better performance */
 }
 
 * {
@@ -57,6 +62,9 @@ body {
   height: 100vh;
   overflow: hidden;
   line-height: 1.5;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .app-container {
@@ -66,8 +74,9 @@ body {
   box-shadow: 0 4px 24px var(--shadow-color);
   border-radius: 8px;
   overflow: hidden;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  will-change: transform; /* Optimize for animations */
 }
 
 .container {
@@ -180,7 +189,9 @@ button {
   background: transparent;
   cursor: pointer;
   color: var(--text-color);
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-fast), 
+              border-color var(--transition-fast),
+              transform var(--transition-fast);
   border-radius: 0;
   box-shadow: none;
 }
@@ -237,8 +248,10 @@ button {
   overflow: hidden;
   border: 1px solid var(--dropdown-border);
   margin-top: 2px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .dropdown:hover .dropdown-content,
@@ -257,7 +270,9 @@ button {
   font-size: 14px;
   color: var(--text-color);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--transition-fast), 
+              border-color var(--transition-fast),
+              transform var(--transition-fast);
   box-shadow: none;
 }
 
@@ -393,19 +408,23 @@ button {
   height: 100%; /* Full height */
   overflow: auto; /* Enable scroll if needed */
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .modal-content {
   background-color: var(--dropdown-bg);
   border-radius: 8px;
-  box-shadow: 0 4px 24px var(--shadow-color);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 16px var(--shadow-color);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
   margin: 15% auto; /* 15% from the top and centered */
   padding: 20px;
   width: 80%; 
   max-width: 500px;
   position: relative;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .close-btn {
@@ -464,15 +483,55 @@ button {
 }
 
 /* Tab Bar Styles */
+.tab-bar-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  height: 36px;
+  padding: 0 4px;
+}
+
 .tab-bar {
   display: flex;
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-  padding: 4px 4px 0;
-  gap: 2px;
   overflow-x: auto;
-  scrollbar-width: thin;
-  position: relative;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  height: 100%;
+  gap: 2px;
+}
+
+.tab-bar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.new-tab-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  margin: 0 0 0 2px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-color);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  align-self: center;
+}
+
+.new-tab-btn:hover {
+  background-color: var(--menu-hover);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.new-tab-btn:active {
+  transform: scale(0.95);
 }
 
 .tab {
@@ -491,6 +550,8 @@ button {
   position: relative;
   transition: all 0.2s ease;
   transform-origin: bottom;
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
 .tab:hover {
@@ -504,6 +565,7 @@ button {
   margin-bottom: -1px;
   transform: translateY(-1px);
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  animation: none; /* Remove animation for better performance */
 }
 
 .tab.active::after {
@@ -514,18 +576,7 @@ button {
   right: 0;
   height: 2px;
   background-color: var(--accent-color);
-  animation: tabIndicator 0.2s ease-in-out;
-}
-
-@keyframes tabIndicator {
-  from {
-    transform: scaleX(0);
-    opacity: 0;
-  }
-  to {
-    transform: scaleX(1);
-    opacity: 1;
-  }
+  animation: none; /* Remove animation for better performance */
 }
 
 .tab-title {
@@ -566,18 +617,12 @@ button {
 
 /* Add a subtle animation when switching tabs */
 @keyframes tabSwitch {
-  0% {
-    opacity: 0.5;
-    transform: translateY(2px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 1; }
+  to { opacity: 1; }
 }
 
 .tab.active {
-  animation: tabSwitch 0.2s ease-out;
+  animation: none; /* Remove animation for better performance */
 }
 
 .save-dialog {
@@ -721,4 +766,71 @@ button {
   color: var(--text-color);
   opacity: 0.7;
   font-size: 12px;
+}
+
+/* Optimize transitions */
+button, input, .menu-btn, .dropdown-item {
+  transition: background-color var(--transition-fast), 
+              border-color var(--transition-fast),
+              transform var(--transition-fast);
+}
+
+/* Optimize tab animations */
+.tab {
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
+}
+
+.tab.active {
+  animation: none; /* Remove animation for better performance */
+}
+
+.tab.active::after {
+  animation: none; /* Remove animation for better performance */
+}
+
+/* Optimize modal backdrop */
+.modal {
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* Optimize dropdown */
+.dropdown-content {
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}
+
+/* Remove unnecessary animations */
+@keyframes tabIndicator {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+
+@keyframes tabSwitch {
+  from { opacity: 1; }
+  to { opacity: 1; }
+}
+
+/* Optimize scrolling */
+.tab-bar {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+}
+
+/* Optimize text rendering */
+body {
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize shadows */
+.modal-content, .dropdown-content {
+  box-shadow: 0 4px 16px var(--shadow-color);
+  will-change: transform;
+  transform: translateZ(0);
 }
