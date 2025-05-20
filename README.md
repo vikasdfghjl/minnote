@@ -62,6 +62,7 @@ npm run tauri build
 ```
 
 The compiled binaries will be available in:
+
 - Windows: `src-tauri/target/release/minnote.exe`
 - macOS: `src-tauri/target/release/bundle/dmg/MinNote_x.x.x_aarch64.dmg` or `MinNote_x.x.x_x86_64.dmg`
 - Linux: `src-tauri/target/release/bundle/appimage/minnote_x.x.x_amd64.AppImage`

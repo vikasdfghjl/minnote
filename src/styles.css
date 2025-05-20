@@ -25,6 +25,9 @@
   --accent-hover: #106ebe;
   --placeholder-color: #888;
   --divider-color: #e0e0e0;
+  --input-bg-color: #f0f0f0; /* Light theme example */
+  --accent-hover-color: #0056b3; /* Darker shade of accent for hover */
+  --secondary-bg-color: #e0e0e0; /* Example for light theme */
 
   font-family: var(--font-main);
   font-size: 16px;
@@ -142,7 +145,8 @@ button {
 .menu-bar {
   display: flex;
   align-items: center;
-  padding: 0;
+  justify-content: flex-start; /* Align items to the start */
+  padding: 0 10px; /* Add some padding to the menubar itself */
   height: 38px;
   background-color: var(--menu-bg);
   border-bottom: 1px solid var(--border-color);
@@ -152,7 +156,7 @@ button {
 .app-title {
   font-size: 14px;
   font-weight: 500;
-  margin-left: 16px;
+  /* margin-left: 16px; */ /* Handled by menu-bar padding */
   margin-right: 20px;
 }
 
@@ -180,6 +184,30 @@ button {
 
 .menu-btn:active {
   background-color: var(--border-color);
+}
+
+.settings-btn { /* Style for the new settings button */
+  margin-left: auto; /* Pushes the button to the far right */
+  padding: 0 12px; 
+  font-size: 18px; 
+  background: transparent; /* Make it look like other menu buttons */
+  border: none;
+  cursor: pointer;
+  color: var(--text-color);
+  height: 100%; /* Make it fill height like other menu buttons */
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  border-radius: 0; 
+  box-shadow: none; 
+}
+
+.settings-btn:hover {
+  background-color: var(--menu-hover); /* Consistent hover */
+}
+
+.settings-btn:active {
+  background-color: var(--border-color); /* Consistent active state */
 }
 
 /* Dropdown styling */
@@ -241,26 +269,25 @@ button {
 }
 
 .editor-container {
-  flex-grow: 1;
-  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
-  position: relative;
-  border: none;
+  background-color: var(--bg-primary);
 }
 
 #note-area {
   width: 100%;
   height: 100%;
-  resize: none;
+  padding: 12px;
+  font-family: var(--font-mono); /* Default: use mono, can be overridden by settings */
+  font-size: 16px; /* Default: 16px, can be overridden by settings */
   border: none;
-  padding: 16px;
-  font-family: var(--font-mono);
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--textarea-bg);
   outline: none;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+  resize: none;
+  background-color: var(--textarea-bg);
+  color: var(--text-color);
+  line-height: 1.6;
 }
 
 #note-area::placeholder {
@@ -302,6 +329,9 @@ button {
     --accent-hover: #2b8dd6;
     --placeholder-color: #888;
     --divider-color: #3d3d3d;
+    --input-bg-color: #3a3a3a; /* Dark theme example */
+    --accent-hover-color: #3f8ee6; /* Lighter shade for dark theme hover */
+    --secondary-bg-color: #2c2c2c; /* Example for dark theme */
 
     color: #f6f6f6;
     background-color: #2f2f2f;
@@ -319,4 +349,223 @@ button {
   button:active {
     background-color: #0f0f0f69;
   }
+
+  /* Dark theme modal adjustments */
+  .modal-content {
+    background-color: var(--bg-color);
+    border: 1px solid var(--dropdown-border);
+  }
+
+  .close-btn {
+    color: var(--text-color);
+  }
+
+  .close-btn:hover,
+  .close-btn:focus {
+    color: #ff6666; /* Lighter red for dark theme */
+  }
+  
+  .modal-content select,
+  .modal-content input[type="number"] {
+    background-color: var(--textarea-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+  }
+}
+
+/* Settings Modal Styles */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1001; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+.modal-content {
+  background-color: var(--bg-color);
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid var(--dropdown-border);
+  width: 80%; 
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-color);
+  position: relative;
+}
+
+.close-btn {
+  color: var(--text-color);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: #ff0000; 
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.modal-content div {
+  margin-bottom: 15px;
+}
+
+.modal-content label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.modal-content select,
+.modal-content input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--textarea-bg); 
+  color: var(--text-color);
+}
+
+.modal-content button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
+}
+
+.modal-content button:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Tab Bar Styles */
+.tab-bar {
+  display: flex;
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 4px 4px 0;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  position: relative;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  cursor: pointer;
+  user-select: none;
+  min-width: 120px;
+  max-width: 200px;
+  gap: 8px;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  transform-origin: bottom;
+}
+
+.tab:hover {
+  background-color: var(--bg-hover);
+  transform: translateY(-1px);
+}
+
+.tab.active {
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--bg-primary);
+  margin-bottom: -1px;
+  transform: translateY(-1px);
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--accent-color);
+  animation: tabIndicator 0.2s ease-in-out;
+}
+
+@keyframes tabIndicator {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+.tab.active .tab-title {
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.tab-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 50%;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+.tab:hover .tab-close {
+  opacity: 1;
+}
+
+.tab-close:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+/* Add a subtle animation when switching tabs */
+@keyframes tabSwitch {
+  0% {
+    opacity: 0.5;
+    transform: translateY(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab.active {
+  animation: tabSwitch 0.2s ease-out;
 }
