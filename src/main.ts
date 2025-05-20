@@ -10,7 +10,9 @@ interface Tab {
   isDirty: boolean;
 }
 
+const mainContent = document.getElementById("main-content") as HTMLDivElement;
 const noteArea = document.getElementById("note-area") as HTMLTextAreaElement;
+const settingsView = document.getElementById("settings-view") as HTMLDivElement;
 const statusMsg = document.getElementById("status-msg") as HTMLElement;
 const charCount = document.getElementById("char-count") as HTMLElement;
 const newBtn = document.getElementById("new-note") as HTMLButtonElement;
@@ -22,20 +24,19 @@ const fileMenuBtn = document.getElementById("file-menu-btn") as HTMLButtonElemen
 const tabBar = document.getElementById("tab-bar") as HTMLDivElement;
 const newTabBtn = document.getElementById("new-tab-btn") as HTMLButtonElement;
 const settingsBtn = document.getElementById("settings-btn") as HTMLButtonElement;
+const backToNotesBtn = document.getElementById("back-to-notes-btn") as HTMLButtonElement;
 
 // Settings and Modal Optimization
 const MODAL_ANIMATION_DURATION = 200; // ms
 
 // Cache DOM queries
-const modalElements = {
-  settings: document.getElementById("settings-modal") as HTMLDivElement,
-  closeBtn: document.getElementById("close-settings-modal") as HTMLSpanElement,
-  applyBtn: document.getElementById("apply-settings-btn") as HTMLButtonElement,
+const settingsElements = {
   fontFamily: document.getElementById("font-family-select") as HTMLSelectElement,
   fontSize: document.getElementById("font-size-input") as HTMLInputElement,
   notesDir: document.getElementById("notes-directory-path") as HTMLSpanElement,
   openDirBtn: document.getElementById("open-notes-directory") as HTMLButtonElement,
-  changeDirBtn: document.getElementById("change-notes-directory") as HTMLButtonElement
+  changeDirBtn: document.getElementById("change-notes-directory") as HTMLButtonElement,
+  applyBtn: document.getElementById("apply-settings-btn") as HTMLButtonElement
 };
 
 // Settings cache
@@ -545,76 +546,55 @@ async function loadNote(filePath?: string) {
 
 // --- Settings Modal Logic ---
 
-function openSettingsModal() {
-  if (!modalElements.settings) return;
-  
-  // Load settings asynchronously
-  requestIdleCallback(() => {
-    loadSettingsToModal();
-  });
-  
-  // Show modal with animation
-  modalElements.settings.style.display = "block";
-  requestAnimationFrame(() => {
-    modalElements.settings.style.opacity = "1";
-    modalElements.settings.style.transform = "scale(1)";
-  });
-}
-
-function closeSettingsModal() {
-  if (!modalElements.settings) return;
-  
-  // Hide modal with animation
-  modalElements.settings.style.opacity = "0";
-  modalElements.settings.style.transform = "scale(0.95)";
-  
-  setTimeout(() => {
-    modalElements.settings.style.display = "none";
-  }, MODAL_ANIMATION_DURATION);
-}
-
-// Optimize settings application
-function applyAndCloseSettings() {
-  const selectedFontFamily = modalElements.fontFamily.value;
-  const selectedFontSize = modalElements.fontSize.value;
-
-  // Update settings cache
-  settingsCache.fontFamily = selectedFontFamily;
-  settingsCache.fontSize = selectedFontSize;
-
-  // Apply settings with animation
-  if (noteArea) {
-    requestAnimationFrame(() => {
-      noteArea.style.fontFamily = selectedFontFamily;
-      noteArea.style.fontSize = `${selectedFontSize}px`;
-    });
+function openSettings() {
+  // Save current tab content if exists
+  if (activeTabId) {
+    const currentTab = tabsMap.get(activeTabId);
+    if (currentTab) {
+      currentTab.content = noteArea.value;
+      currentTab.lastModified = Date.now();
+    }
   }
 
-  // Save settings asynchronously
-  requestIdleCallback(() => {
-    saveSettings(selectedFontFamily, selectedFontSize);
-  });
-
-  setStatus("Settings applied");
-  setTimeout(() => setStatus("Ready"), 2000);
-  closeSettingsModal();
+  // Load settings
+  loadSettingsToView();
+  
+  // Show settings view
+  noteArea.style.display = "none";
+  settingsView.style.display = "block";
+  
+  // Update status
+  setStatus("Settings");
 }
 
-function saveSettings(fontFamily: string, fontSize: string) {
-  localStorage.setItem("minnote-fontFamily", fontFamily);
-  localStorage.setItem("minnote-fontSize", fontSize);
+function closeSettings() {
+  // Hide settings view
+  settingsView.style.display = "none";
+  noteArea.style.display = "block";
+  
+  // Restore tab content
+  if (activeTabId) {
+    const tab = tabsMap.get(activeTabId);
+    if (tab) {
+      noteArea.value = tab.content;
+      updateCharCount();
+    }
+  }
+  
+  // Update status
+  setStatus("Ready");
 }
 
-// Optimize settings loading
-async function loadSettingsToModal() {
+// Update settings loading function
+async function loadSettingsToView() {
   // Load font settings from cache
-  if (modalElements.fontFamily) {
-    modalElements.fontFamily.value = settingsCache.fontFamily || 
+  if (settingsElements.fontFamily) {
+    settingsElements.fontFamily.value = settingsCache.fontFamily || 
       (noteArea ? getComputedStyle(noteArea).fontFamily : 'var(--font-main)');
   }
   
-  if (modalElements.fontSize) {
-    modalElements.fontSize.value = settingsCache.fontSize || 
+  if (settingsElements.fontSize) {
+    settingsElements.fontSize.value = settingsCache.fontSize || 
       (noteArea ? parseInt(getComputedStyle(noteArea).fontSize).toString() : '16');
   }
 
@@ -623,54 +603,45 @@ async function loadSettingsToModal() {
     try {
       const path = await invoke<string>("get_notes_directory");
       settingsCache.notesDirectory = path;
-      if (modalElements.notesDir) {
-        modalElements.notesDir.textContent = path;
+      if (settingsElements.notesDir) {
+        settingsElements.notesDir.textContent = path;
       }
     } catch (e) {
-      if (modalElements.notesDir) {
-        modalElements.notesDir.textContent = "Error loading directory path";
+      if (settingsElements.notesDir) {
+        settingsElements.notesDir.textContent = "Error loading directory path";
       }
     }
-  } else if (modalElements.notesDir) {
-    modalElements.notesDir.textContent = settingsCache.notesDirectory;
+  } else if (settingsElements.notesDir) {
+    settingsElements.notesDir.textContent = settingsCache.notesDirectory;
   }
 }
 
-// Optimize directory operations
-modalElements.openDirBtn?.addEventListener("click", async () => {
-  try {
-    await invoke("open_notes_directory");
-  } catch (e) {
-    setStatus("Error opening notes directory");
-  }
-});
+// Update settings application function
+function applySettings() {
+  const selectedFontFamily = settingsElements.fontFamily.value;
+  const selectedFontSize = settingsElements.fontSize.value;
 
-modalElements.changeDirBtn?.addEventListener("click", async () => {
-  try {
-    const newPath = await invoke<string>("select_notes_directory");
-    settingsCache.notesDirectory = newPath;
-    if (modalElements.notesDir) {
-      modalElements.notesDir.textContent = newPath;
-      setStatus("Notes directory changed");
-      setTimeout(() => setStatus("Ready"), 2000);
-    }
-  } catch (e) {
-    if (e !== "No directory selected") {
-      setStatus("Error changing notes directory");
-    }
-  }
-});
+  // Update settings cache
+  settingsCache.fontFamily = selectedFontFamily;
+  settingsCache.fontSize = selectedFontSize;
 
-// Event Listeners for Settings
-modalElements.closeBtn?.addEventListener("click", closeSettingsModal);
-modalElements.applyBtn?.addEventListener("click", applyAndCloseSettings);
-
-// Close modal if user clicks outside
-window.addEventListener("click", (event) => {
-  if (event.target === modalElements.settings) {
-    closeSettingsModal();
+  // Apply settings
+  if (noteArea) {
+    noteArea.style.fontFamily = selectedFontFamily;
+    noteArea.style.fontSize = `${selectedFontSize}px`;
   }
-});
+
+  // Save settings
+  saveSettings(selectedFontFamily, selectedFontSize);
+
+  setStatus("Settings applied");
+  setTimeout(() => setStatus("Ready"), 2000);
+}
+
+function saveSettings(fontFamily: string, fontSize: string) {
+  localStorage.setItem("minnote-fontFamily", fontFamily);
+  localStorage.setItem("minnote-fontSize", fontSize);
+}
 
 // --- End Settings Modal Logic ---
 
@@ -856,6 +827,59 @@ newTabBtn?.addEventListener("click", () => {
 });
 
 // Add event listener for settings button
-settingsBtn?.addEventListener("click", () => {
-  openSettingsModal();
+settingsBtn?.addEventListener("click", openSettings);
+backToNotesBtn?.addEventListener("click", closeSettings);
+settingsElements.applyBtn?.addEventListener("click", () => {
+  applySettings();
+  closeSettings();
 });
+
+// Update directory operation handlers
+settingsElements.openDirBtn?.addEventListener("click", async () => {
+  try {
+    await invoke("open_notes_directory");
+  } catch (e) {
+    setStatus("Error opening notes directory");
+  }
+});
+
+settingsElements.changeDirBtn?.addEventListener("click", async () => {
+  try {
+    const newPath = await invoke<string>("select_notes_directory");
+    settingsCache.notesDirectory = newPath;
+    if (settingsElements.notesDir) {
+      settingsElements.notesDir.textContent = newPath;
+      setStatus("Notes directory changed");
+      setTimeout(() => setStatus("Ready"), 2000);
+    }
+  } catch (e) {
+    if (e !== "No directory selected") {
+      setStatus("Error changing notes directory");
+    }
+  }
+});
+
+// Load saved settings
+function loadSettings() {
+  // Load font settings
+  const savedFontFamily = localStorage.getItem("minnote-fontFamily");
+  const savedFontSize = localStorage.getItem("minnote-fontSize");
+
+  if (noteArea) {
+    if (savedFontFamily) {
+      noteArea.style.fontFamily = savedFontFamily;
+    }
+    if (savedFontSize) {
+      noteArea.style.fontSize = `${savedFontSize}px`;
+    }
+  }
+
+  // Load notes directory
+  invoke<string>("get_notes_directory")
+    .then(path => {
+      settingsCache.notesDirectory = path;
+    })
+    .catch(e => {
+      console.error("Error loading notes directory:", e);
+    });
+}

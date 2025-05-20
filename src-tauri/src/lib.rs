@@ -2,7 +2,6 @@ use std::fs;
 use tauri_plugin_dialog::DialogExt;
 use std::sync::mpsc;
 use dirs::data_dir;
-use std::path::PathBuf;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]

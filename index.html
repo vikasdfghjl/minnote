@@ -18,12 +18,11 @@
               <button id="open-note" class="dropdown-item">Open</button>
               <button id="save-note" class="dropdown-item">Save</button>
               <button id="save-as-note" class="dropdown-item">Save As</button>
-              <div class="dropdown-divider"></div>
               <button id="exit-app" class="dropdown-item">Exit</button>
             </div>
           </div>
         </div>
-        <button id="settings-btn" class="menu-btn settings-btn">⚙️</button>
+        <button id="settings-btn" class="menu-btn">Settings</button>
       </div>
 
       <!-- Tab Bar -->
@@ -34,8 +33,46 @@
       </div>
 
       <!-- Editor Area -->
-      <div class="editor-container">
+      <div id="main-content">
         <textarea id="note-area" placeholder="Start typing your notes..." spellcheck="false"></textarea>
+        <div id="settings-view" class="settings-view" style="display: none;">
+          <h2>Settings</h2>
+          
+          <div class="settings-section">
+            <label for="font-family-select">Font Family:</label>
+            <select id="font-family-select">
+              <option value="var(--font-main)">System Default</option>
+              <option value="var(--font-mono)">Monospace</option>
+              <option value="Arial">Arial</option>
+              <option value="Times New Roman">Times New Roman</option>
+              <option value="Courier New">Courier New</option>
+            </select>
+          </div>
+          
+          <div class="settings-section">
+            <label for="font-size-input">Font Size (px):</label>
+            <input type="number" id="font-size-input" min="8" max="72" value="16">
+          </div>
+
+          <div class="settings-section">
+            <label>Notes Directory:</label>
+            <div class="notes-directory-info">
+              <span id="notes-directory-path">Loading...</span>
+              <div class="notes-directory-buttons">
+                <button id="change-notes-directory" class="change-folder-btn">Change</button>
+                <button id="open-notes-directory" class="open-folder-btn">Open Folder</button>
+              </div>
+            </div>
+            <div class="notes-directory-help">
+              <small>This is where your notes will be saved. You can change this location at any time.</small>
+            </div>
+          </div>
+          
+          <div class="settings-buttons">
+            <button id="apply-settings-btn" class="primary-btn">Apply</button>
+            <button id="back-to-notes-btn" class="secondary-btn">Back to Notes</button>
+          </div>
+        </div>
       </div>
 
       <!-- Status Bar -->
@@ -44,46 +81,6 @@
         <div class="status-right">
           <span id="char-count">0 characters</span>
         </div>
-      </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="close-settings-modal">&times;</span>
-        <h2>Settings</h2>
-        
-        <div>
-          <label for="font-family-select">Font Family:</label>
-          <select id="font-family-select">
-            <option value="var(--font-main)">System Default</option>
-            <option value="var(--font-mono)">Monospace</option>
-            <option value="Arial">Arial</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-          </select>
-        </div>
-        
-        <div>
-          <label for="font-size-input">Font Size (px):</label>
-          <input type="number" id="font-size-input" min="8" max="72" value="16">
-        </div>
-
-        <div class="notes-directory-section">
-          <label>Notes Directory:</label>
-          <div class="notes-directory-info">
-            <span id="notes-directory-path">Loading...</span>
-            <div class="notes-directory-buttons">
-              <button id="change-notes-directory" class="change-folder-btn">Change</button>
-              <button id="open-notes-directory" class="open-folder-btn">Open Folder</button>
-            </div>
-          </div>
-          <div class="notes-directory-help">
-            <small>This is where your notes will be saved. You can change this location at any time.</small>
-          </div>
-        </div>
-        
-        <button id="apply-settings-btn">Apply</button>
       </div>
     </div>
   </body>

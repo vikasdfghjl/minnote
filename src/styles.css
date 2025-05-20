@@ -320,6 +320,10 @@ button {
 }
 
 .status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -329,6 +333,7 @@ button {
   border-top: 1px solid var(--border-color);
   font-size: 12px;
   color: #666;
+  z-index: 100;
 }
 
 .status-right {
@@ -397,89 +402,119 @@ button {
   }
 }
 
-/* Settings Modal Styles */
-.modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1001; /* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-}
-
-.modal-content {
-  background-color: var(--dropdown-bg);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px var(--shadow-color);
-  backdrop-filter: blur(var(--backdrop-blur));
-  -webkit-backdrop-filter: blur(var(--backdrop-blur));
-  margin: 15% auto; /* 15% from the top and centered */
+/* Settings View Styles */
+.settings-view {
   padding: 20px;
-  width: 80%; 
-  max-width: 500px;
-  position: relative;
-  will-change: transform;
-  transform: translateZ(0);
+  height: 100%;
+  overflow-y: auto;
+  background-color: var(--bg-color);
 }
 
-.close-btn {
+.settings-view h2 {
+  margin: 0 0 20px 0;
   color: var(--text-color);
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 24px;
 }
 
-.close-btn:hover,
-.close-btn:focus {
-  color: #ff0000; 
-  text-decoration: none;
-  cursor: pointer;
+.settings-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: var(--secondary-bg-color);
+  border-radius: 8px;
 }
 
-.modal-content h2 {
-  margin-top: 0;
-  margin-bottom: 15px;
-  font-size: 20px;
-}
-
-.modal-content div {
-  margin-bottom: 15px;
-}
-
-.modal-content label {
+.settings-section label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  color: var(--text-color);
   font-weight: 500;
 }
 
-.modal-content select,
-.modal-content input[type="number"] {
+.settings-section select,
+.settings-section input {
   width: 100%;
   padding: 8px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  background-color: var(--textarea-bg); 
+  background-color: var(--input-bg-color);
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.settings-section select:focus,
+.settings-section input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.notes-directory-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: var(--input-bg-color);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+#notes-directory-path {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--text-color);
 }
 
-.modal-content button {
-  background-color: var(--accent-color);
-  color: white;
-  padding: 10px 15px;
+.notes-directory-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.notes-directory-help {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.settings-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.primary-btn,
+.secondary-btn {
+  padding: 8px 16px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.2s ease;
+  font-size: 14px;
+  transition: background-color 0.2s;
 }
 
-.modal-content button:hover {
+.primary-btn {
+  background-color: var(--accent-color);
+  color: white;
+}
+
+.primary-btn:hover {
   background-color: var(--accent-hover);
+}
+
+.secondary-btn {
+  background-color: var(--secondary-bg-color);
+  color: var(--text-color);
+}
+
+.secondary-btn:hover {
+  background-color: var(--menu-hover);
+}
+
+/* Remove old modal styles */
+.modal {
+  display: none;
 }
 
 /* Tab Bar Styles */
@@ -704,31 +739,6 @@ button {
   border-top: 1px solid var(--divider-color);
 }
 
-.notes-directory-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  padding: 8px;
-  background-color: var(--input-bg-color);
-  border-radius: 4px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
-#notes-directory-path {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text-color);
-}
-
-.notes-directory-buttons {
-  display: flex;
-  gap: 8px;
-}
-
 .change-folder-btn {
   background-color: var(--secondary-bg-color);
   color: var(--text-color);
@@ -759,13 +769,6 @@ button {
 
 .open-folder-btn:hover {
   background-color: var(--accent-hover);
-}
-
-.notes-directory-help {
-  margin-top: 8px;
-  color: var(--text-color);
-  opacity: 0.7;
-  font-size: 12px;
 }
 
 /* Optimize transitions */
@@ -833,4 +836,26 @@ body {
   box-shadow: 0 4px 16px var(--shadow-color);
   will-change: transform;
   transform: translateZ(0);
+}
+
+/* Bottom bar */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  z-index: 100;
+}
+
+/* Adjust main content to account for bottom bar */
+#main-content {
+  padding-bottom: 24px;
 }
