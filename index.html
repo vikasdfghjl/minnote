@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MinNote</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="app-container">      <!-- Menu Bar -->
+      <div class="menu-bar">
+        <div class="app-title">MinNote</div>
+        <div class="menu-items">
+          <div class="dropdown">
+            <button id="file-menu-btn" class="menu-btn">File</button>
+            <div class="dropdown-content">
+              <button id="new-note" class="dropdown-item">New</button>
+              <button id="open-note" class="dropdown-item">Open</button>
+              <button id="save-note" class="dropdown-item">Save</button>
+              <button id="save-as-note" class="dropdown-item">Save As</button>
+              <div class="dropdown-divider"></div>
+              <button id="exit-app" class="dropdown-item">Exit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editor Area -->
+      <div class="editor-container">
+        <textarea id="note-area" placeholder="Start typing your notes..." spellcheck="false"></textarea>
+      </div>
+
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span id="status-msg">Ready</span>
+        <div class="status-right">
+          <span id="char-count">0 characters</span>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
