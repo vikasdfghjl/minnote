@@ -2,6 +2,13 @@ use std::fs;
 use tauri_plugin_dialog::DialogExt;
 use std::sync::mpsc;
 use dirs::data_dir;
+use std::path::PathBuf;
+use printpdf::*;
+use std::io::Cursor;
+use html2text::from_read;
+use std::io::BufWriter;
+use std::fs::File;
+use tempfile;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -153,6 +160,137 @@ fn open_notes_directory() -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+async fn export_pdf(content: String, file_name: String, window: tauri::Window) -> Result<(), String> {
+    let (tx, rx) = mpsc::channel();
+    
+    // Convert HTML to plain text for PDF
+    let text_content = from_read(Cursor::new(content.as_bytes()), 80);
+    
+    // Create a new PDF document
+    let (doc, page1, layer1) = PdfDocument::new(
+        "MinNote Export",
+        Mm(210.0), // A4 width
+        Mm(297.0), // A4 height
+        format!("Layer {}", 1)
+    );
+    
+    let current_layer = doc.get_page(page1).get_layer(layer1);
+    
+    // Add text to the PDF
+    let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
+    let font_size = 12.0;
+    
+    // Split text into lines and add to PDF
+    let mut y_position = Mm(277.0); // Start from top with margin
+    for line in text_content.lines() {
+        if y_position < Mm(20.0) { // Stop if we reach bottom margin
+            break;
+        }
+        
+        current_layer.use_text(
+            line,
+            font_size,
+            Mm(20.0), // Left margin
+            y_position,
+            &font
+        );
+        
+        y_position -= Mm(font_size * 1.5); // Move down for next line
+    }
+    
+    // Create a temporary file to store the PDF
+    let temp_file = tempfile::NamedTempFile::new().map_err(|e| e.to_string())?;
+    let temp_path = temp_file.path().to_owned();
+    
+    // Save the PDF to the temporary file
+    {
+        let file = File::create(&temp_path).map_err(|e| e.to_string())?;
+        let mut writer = BufWriter::new(file);
+        doc.save(&mut writer).map_err(|e| e.to_string())?;
+    }
+    
+    // Open save dialog for PDF
+    window.dialog()
+        .file()
+        .add_filter("PDF Files", &["pdf"])
+        .set_file_name(&format!("{}.pdf", file_name))
+        .save_file(move |path| {
+            if let Some(path) = path {
+                // Copy the temporary file to the selected location
+                if let Err(e) = fs::copy(&temp_path, path.to_string()) {
+                    let _ = tx.send(Err(e.to_string()));
+                    return;
+                }
+            }
+            let _ = tx.send(Ok(()));
+        });
+
+    rx.recv().map_err(|_| "Dialog was closed".to_string())?
+}
+
+#[tauri::command]
+async fn export_html(content: String, file_name: String, window: tauri::Window) -> Result<(), String> {
+    let (tx, rx) = mpsc::channel();
+    
+    // Create a complete HTML document
+    let html_content = format!(
+        "<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='UTF-8'>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }}
+            </style>
+        </head>
+        <body>
+            {}
+        </body>
+        </html>",
+        content
+    );
+    
+    window.dialog()
+        .file()
+        .add_filter("HTML Files", &["html"])
+        .set_file_name(&format!("{}.html", file_name))
+        .save_file(move |path| {
+            if let Some(path) = path {
+                if let Err(e) = fs::write(path.to_string(), html_content) {
+                    let _ = tx.send(Err(e.to_string()));
+                    return;
+                }
+            }
+            let _ = tx.send(Ok(()));
+        });
+
+    rx.recv().map_err(|_| "Dialog was closed".to_string())?
+}
+
+#[tauri::command]
+async fn export_text(content: String, file_name: String, window: tauri::Window) -> Result<(), String> {
+    let (tx, rx) = mpsc::channel();
+    
+    // Convert HTML to plain text
+    let text_content = from_read(Cursor::new(content.as_bytes()), 80);
+    
+    window.dialog()
+        .file()
+        .add_filter("Text Files", &["txt"])
+        .set_file_name(&format!("{}.txt", file_name))
+        .save_file(move |path| {
+            if let Some(path) = path {
+                if let Err(e) = fs::write(path.to_string(), text_content) {
+                    let _ = tx.send(Err(e.to_string()));
+                    return;
+                }
+            }
+            let _ = tx.send(Ok(()));
+        });
+
+    rx.recv().map_err(|_| "Dialog was closed".to_string())?
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -165,7 +303,10 @@ pub fn run() {
             open_file_dialog,
             get_notes_directory,
             open_notes_directory,
-            select_notes_directory
+            select_notes_directory,
+            export_pdf,
+            export_html,
+            export_text
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

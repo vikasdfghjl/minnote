@@ -26,16 +26,32 @@
               <button id="open-note" class="dropdown-item">Open</button>
               <button id="save-note" class="dropdown-item">Save</button>
               <button id="save-as-note" class="dropdown-item">Save As</button>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-submenu">
+                <button class="dropdown-item">Export</button>
+                <div class="dropdown-submenu-content">
+                  <button id="export-pdf" class="dropdown-item">PDF</button>
+                  <button id="export-html" class="dropdown-item">HTML</button>
+                  <button id="export-text" class="dropdown-item">Plain Text</button>
+                </div>
+              </div>
+              <div class="dropdown-divider"></div>
               <button id="exit-app" class="dropdown-item">Exit</button>
             </div>
           </div>
+          <div class="format-buttons">
+            <button id="bold-btn" class="menu-btn" title="Bold (Ctrl+B)"><b>B</b></button>
+            <button id="italic-btn" class="menu-btn" title="Italic (Ctrl+I)"><i>I</i></button>
+            <button id="bullet-list-btn" class="menu-btn" title="Bullet List">•</button>
+            <button id="number-list-btn" class="menu-btn" title="Numbered List">1.</button>
+          </div>
         </div>
-        <button id="settings-btn" class="menu-btn">Settings</button>
+        <button id="settings-btn" class="menu-btn settings-icon" title="Settings">⚙️</button>
       </div>
 
       <!-- Editor Area -->
       <div id="main-content">
-        <textarea id="note-area" placeholder="Start typing your notes..." spellcheck="false"></textarea>
+        <div id="note-area" class="note-area" contenteditable="true" spellcheck="true"></div>
         <div id="settings-view" class="settings-view" style="display: none;">
           <h2>Settings</h2>
           

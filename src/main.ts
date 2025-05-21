@@ -12,7 +12,7 @@ interface Tab {
 }
 
 // const mainContent = document.getElementById("main-content") as HTMLDivElement;
-const noteArea = document.getElementById("note-area") as HTMLTextAreaElement;
+const noteArea = document.getElementById("note-area") as HTMLDivElement;
 const settingsView = document.getElementById("settings-view") as HTMLDivElement;
 const statusMsg = document.getElementById("status-msg") as HTMLElement;
 const charCount = document.getElementById("char-count") as HTMLElement;
@@ -26,6 +26,13 @@ const tabBar = document.getElementById("tab-bar") as HTMLDivElement;
 const newTabBtn = document.getElementById("new-tab-btn") as HTMLButtonElement;
 const settingsBtn = document.getElementById("settings-btn") as HTMLButtonElement;
 const backToNotesBtn = document.getElementById("back-to-notes-btn") as HTMLButtonElement;
+const boldBtn = document.getElementById("bold-btn") as HTMLButtonElement;
+const italicBtn = document.getElementById("italic-btn") as HTMLButtonElement;
+const bulletListBtn = document.getElementById("bullet-list-btn") as HTMLButtonElement;
+const numberListBtn = document.getElementById("number-list-btn") as HTMLButtonElement;
+const exportPdfBtn = document.getElementById("export-pdf") as HTMLButtonElement;
+const exportHtmlBtn = document.getElementById("export-html") as HTMLButtonElement;
+const exportTextBtn = document.getElementById("export-text") as HTMLButtonElement;
 
 // Settings and Modal Optimization
 // const MODAL_ANIMATION_DURATION = 200; // ms
@@ -110,7 +117,7 @@ function handleError(error: Error, context: string) {
   
   // Implement retry logic for specific operations
   if (context === 'save_note') {
-    retryOperation(() => saveNote(noteArea.value, activeTabId!, true), 3);
+    retryOperation(() => saveNote(noteArea.innerHTML, activeTabId!, true), 3);
   } else if (context === 'load_note') {
     const activeTab = activeTabId ? tabsMap.get(activeTabId) : undefined;
     retryOperation(async () => {
@@ -162,9 +169,9 @@ function switchToTab(tabId: string) {
   if (activeTabId) {
     const currentTab = tabsMap.get(activeTabId);
     if (currentTab) {
-      currentTab.content = noteArea.value;
+      currentTab.content = noteArea.innerHTML;
       currentTab.lastModified = Date.now();
-      tabContentCache.set(activeTabId, noteArea.value);
+      tabContentCache.set(activeTabId, noteArea.innerHTML);
     }
   }
 
@@ -183,10 +190,10 @@ function switchToTab(tabId: string) {
     // Check cache first
     const cachedContent = tabContentCache.get(tabId);
     if (cachedContent && Date.now() - tab.lastModified < CACHE_EXPIRY) {
-      noteArea.value = cachedContent;
+      noteArea.innerHTML = cachedContent;
       performanceMetrics.cacheHits++;
     } else {
-      noteArea.value = tab.content;
+      noteArea.innerHTML = tab.content;
       tabContentCache.set(tabId, tab.content);
       performanceMetrics.cacheMisses++;
     }
@@ -265,7 +272,7 @@ async function closeTab(tabId: string) {
     if (activeTabId) {
       switchToTab(activeTabId);
     } else {
-      noteArea.value = "";
+      noteArea.innerHTML = "";
       updateCharCount();
     }
   }
@@ -324,7 +331,7 @@ if (noteArea) {
     if (!activeTabId || isUpdating) return;
     const activeTab = tabsMap.get(activeTabId);
     if (!activeTab) return;
-    const newContent = noteArea.value;
+    const newContent = noteArea.innerHTML;
     if (newContent === lastContent) return;
     isUpdating = true;
     activeTab.isDirty = true;
@@ -339,7 +346,7 @@ if (noteArea) {
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
     autoSaveTimer = window.setTimeout(() => {
       if (activeTabId) {
-        saveNote(noteArea.value, activeTabId, false);
+        saveNote(noteArea.innerHTML, activeTabId, false);
       }
     }, AUTO_SAVE_DELAY);
   }, 100));
@@ -355,12 +362,9 @@ if (noteArea) {
 
 // Optimize character count updates
 function updateCharCount() {
-  if (!charCount || !noteArea) return;
-  
-  requestAnimationFrame(() => {
-    const count = noteArea.value.length;
-    charCount.textContent = `${count} character${count !== 1 ? 's' : ''}`;
-  });
+  const text = noteArea.innerText;
+  const count = text.length;
+  charCount.textContent = `${count} characters`;
 }
 
 // Optimize status updates
@@ -465,7 +469,7 @@ async function loadNote(filePath?: string) {
       performanceMetrics.cacheMisses++;
     }
 
-    const content = await invoke<string>("load_note", { filePath });
+    const content = await invoke<string>("read_file", { filePath });
     if (!activeTabId) return;
 
     const activeTab = tabsMap.get(activeTabId);
@@ -493,7 +497,7 @@ async function loadNote(filePath?: string) {
         });
       }
       
-      noteArea.value = content || "";
+      noteArea.innerHTML = content || "";
       tabContentCache.set(activeTabId, content || "");
       updateCharCount();
       setStatus("Note loaded");
@@ -659,7 +663,7 @@ window.addEventListener('unload', cleanupTimers);
 
 saveBtn?.addEventListener("click", () => {
   if (!activeTabId) return;
-  saveNote(noteArea.value, activeTabId, true);
+  saveNote(noteArea.innerHTML, activeTabId, true);
 });
 
 saveAsBtn?.addEventListener("click", () => {
@@ -668,7 +672,7 @@ saveAsBtn?.addEventListener("click", () => {
   if (activeTab) {
     // Clear the file path to force a new save dialog
     activeTab.filePath = undefined;
-    saveNote(noteArea.value, activeTabId, true);
+    saveNote(noteArea.innerHTML, activeTabId, true);
   }
 });
 
@@ -693,7 +697,7 @@ newBtn?.addEventListener("click", () => {
 });
 
 exitBtn?.addEventListener("click", async () => {
-  if (noteArea.value && !confirm("Exit? Unsaved changes will be lost.")) {
+  if (noteArea.innerHTML && !confirm("Exit? Unsaved changes will be lost.")) {
     return;
   }
   try {
@@ -852,3 +856,82 @@ function throttle<T extends (...args: any[]) => any>(
     }
   };
 }
+
+// Add formatting functions
+function formatText(command: string, value: string = '') {
+  document.execCommand(command, false, value);
+  noteArea.focus();
+}
+
+function toggleFormatButton(button: HTMLButtonElement, command: string) {
+  const isActive = document.queryCommandState(command);
+  button.classList.toggle('active', isActive);
+}
+
+// Add event listeners for formatting buttons
+boldBtn.addEventListener('click', () => formatText('bold'));
+italicBtn.addEventListener('click', () => formatText('italic'));
+bulletListBtn.addEventListener('click', () => formatText('insertUnorderedList'));
+numberListBtn.addEventListener('click', () => formatText('insertOrderedList'));
+
+// Add keyboard shortcuts
+noteArea.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.key.toLowerCase()) {
+      case 'b':
+        e.preventDefault();
+        formatText('bold');
+        break;
+      case 'i':
+        e.preventDefault();
+        formatText('italic');
+        break;
+    }
+  }
+});
+
+// Update button states when selection changes
+noteArea.addEventListener('mouseup', () => {
+  toggleFormatButton(boldBtn, 'bold');
+  toggleFormatButton(italicBtn, 'italic');
+});
+
+noteArea.addEventListener('keyup', () => {
+  toggleFormatButton(boldBtn, 'bold');
+  toggleFormatButton(italicBtn, 'italic');
+});
+
+// Export functions
+async function exportNote(format: 'pdf' | 'html' | 'text') {
+  if (!activeTabId) return;
+  
+  const tab = tabsMap.get(activeTabId);
+  if (!tab) return;
+
+  try {
+    const content = noteArea.innerHTML;
+    const fileName = tab.title || 'untitled';
+    
+    switch (format) {
+      case 'pdf':
+        await invoke("export_pdf", { content, fileName });
+        break;
+      case 'html':
+        await invoke("export_html", { content, fileName });
+        break;
+      case 'text':
+        await invoke("export_text", { content: noteArea.innerText, fileName });
+        break;
+    }
+    
+    setStatus(`Exported as ${format.toUpperCase()}`);
+    setTimeout(() => setStatus("Ready"), 2000);
+  } catch (error) {
+    handleError(error as Error, 'export_note');
+  }
+}
+
+// Add event listeners for export buttons
+exportPdfBtn?.addEventListener("click", () => exportNote('pdf'));
+exportHtmlBtn?.addEventListener("click", () => exportNote('html'));
+exportTextBtn?.addEventListener("click", () => exportNote('text'));
